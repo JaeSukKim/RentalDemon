@@ -29,6 +29,9 @@ public class ContractStatusCron {
     @Value("${rental.admin.mail.address}")
     private String adminMailAddress;
 
+    @Value("${spring.mail.username}")
+    private String fromAddress;
+
     private String contractStatusMailSubject;
     private String contractStatusMailContent;
 
@@ -45,6 +48,7 @@ public class ContractStatusCron {
         // 계약 만료된 '대여' 목록 조회
         List<SimpleContractInfo> contractInfoList = contractCustomRepository.findExpiredContracts();
         if (CollectionUtils.isEmpty(contractInfoList)) {
+            log.info("Not exist Changed Contracts.");
             return;
         }
 
@@ -52,7 +56,7 @@ public class ContractStatusCron {
         contractInfoList.stream().forEach(simpleContractInfo -> simpleContractInfo.setContractStatus("종결"));
         List<SimpleContractInfo> updateContractInfoList = contractInfoRepository.saveAll(contractInfoList);
 
-        log.info("{}", Arrays.toString(updateContractInfoList.toArray()));
+        log.info("Changed Contracts. - {}", Arrays.toString(updateContractInfoList.toArray()));
 
         // 이메일 전송을 위한 변경 이력 데이터 생성
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -84,7 +88,7 @@ public class ContractStatusCron {
         String subject = "Test 메일";
         String content = "렌탈 시스템 테스트 이메일 입니다.";
 
-        mailSender.sendMail(adminMailAddress, subject, content);
+        mailSender.sendMail(fromAddress, adminMailAddress, subject, content);
     }
 
     //@Scheduled(cron = "*/10 * * * * *")
@@ -99,7 +103,7 @@ public class ContractStatusCron {
             return;
         }
 
-        mailSender.sendMail(adminMailAddress, contractStatusMailSubject, contractStatusMailContent);
+        mailSender.sendMail(fromAddress, adminMailAddress, contractStatusMailSubject, contractStatusMailContent);
         log.info("[{}] Success to send mail - {}, {}", currentDate, adminMailAddress, contractStatusMailSubject);
     }
 }
